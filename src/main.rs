@@ -33,7 +33,7 @@ impl Tcod {
         .font("arial10x10.png", FontLayout::Tcod)
         .font_type(FontType::Greyscale)
         .size(screen_size.x, screen_size.y)
-        .title("A Rougelike!")
+        .title("A Rogue-like!")
         .init();
 
         let con = Offscreen::new(state.map.width as i32, state.map.height as i32);
