@@ -12,14 +12,6 @@ use map::*;
 
 type Map = map::Map;
 
-fn tile_color(tile: Tile) -> Option<Color> {
-    match tile {
-        Tile::Empty => None,
-        Tile::Ground => Some(BLUE),
-        Tile::Wall => Some(RED),
-    }
-}
-
 struct Tcod {
     screen_size: Pos,
     root: Root,
@@ -88,7 +80,7 @@ impl State {
         }
     }
 
-    pub fn draw_map(&self, con: &mut dyn Console) {
+    pub fn draw_map(&self, tile_color: fn (Tile) -> Option<Color>, con: &mut dyn Console) {
         for y in 0..self.map.height as i32 {
             for x in 0..self.map.width as i32 {
                 let wall = self.map[Pos { x, y }];
@@ -123,6 +115,14 @@ fn input_dispatch(state: &mut State, key: Key) -> bool {
     return true;
 }
 
+fn tile_color(tile: Tile) -> Option<Color> {
+    match tile {
+        Tile::Empty => None,
+        Tile::Ground => Some(BLUE),
+        Tile::Wall => Some(RED),
+    }
+}
+
 
 const LIMIT_FPS: i32 = 20;
 
@@ -140,7 +140,7 @@ fn main() {
         //  Clear the offscreen
         tcod.con.clear();
 
-        state.draw_map(&mut tcod.con);
+        state.draw_map(tile_color, &mut tcod.con);
         state.draw_objects(&mut tcod.con);
 
         //  Draw the offscreen onto the root screen and flush
