@@ -2,7 +2,7 @@ pub mod map;
 pub mod object;
 pub mod pos;
 
-use std::collections::hash_set::HashSet;
+use std::collections::hash_map::HashMap;
 
 use tcod::{colors, colors::Color, console::*, input::Key};
 
@@ -41,21 +41,23 @@ impl Tcod {
 
 pub struct State {
     player: Player,
-    npcs: HashSet<Enemy>,
+    npcs: HashMap<u32, Enemy>,
     map: Map,
 }
 
 impl State {
     pub fn new(map_width: u16, map_height: u16) -> Self {
         let player = Player::new(Pos::new(map_width as i32 / 2, map_height as i32 / 2));
-        let npcs = [].iter().cloned().collect(); vec![enemy::basic_enemy(player.pos.move_by(5, 1), 10)];
+        let npcs = [
+            (0, enemy::basic_enemy(player.pos.move_by(5, 1), 10))
+        ].iter().cloned().collect(); 
         let map = Map::new(map_width, map_height);
         State { player, npcs, map }
     }
 
     pub fn draw_characters(&self, con: &mut dyn Console) {
         //  Draw state onto offscreen
-        for npc in self.npcs.iter() {
+        for (_, npc) in self.npcs.iter() {
             npc.draw(con);
         }
         self.player.draw(con);
