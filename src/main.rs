@@ -42,6 +42,7 @@ impl Tcod {
 pub struct State {
     player: Player,
     npcs: HashMap<u32, Enemy>,
+    next_npc_id: u32,
     map: Map,
 }
 
@@ -52,7 +53,7 @@ impl State {
             (0, enemy::basic_enemy(player.pos.move_by(5, 1), 10))
         ].iter().cloned().collect(); 
         let map = Map::new(map_width, map_height);
-        State { player, npcs, map }
+        State { player, npcs, next_npc_id: 1, map }
     }
 
     pub fn draw_characters(&self, con: &mut dyn Console) {
@@ -150,8 +151,10 @@ fn main() {
             break;
         }
 
-        for npc in state.npcs.iter_mut() {
+        for id in 0..state.next_npc_id {
+            let mut npc = state.npcs.remove(&id).unwrap();
             npc.turn(&mut state);
+            state.npcs.insert(id, npc);
         }
     }
 }
