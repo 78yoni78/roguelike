@@ -1,16 +1,13 @@
-pub mod pos;
 pub mod map;
 pub mod object;
+pub mod pos;
 
-use tcod::colors::*;
-use tcod::console::*;
-use tcod::input::Key;
-use tcod::input::KeyCode::*;
+use tcod::{colors, colors::Color, console::*, input::Key};
 
-use pos::*;
 use map::*;
 use object::*;
 use object::{enemy::Enemy, player::Player};
+use pos::*;
 
 type Map = map::Map;
 
@@ -23,16 +20,20 @@ pub struct Tcod {
 impl Tcod {
     pub fn new(state: &State, screen_size: Pos) -> Self {
         let root = Root::initializer()
-        //  .font("consolas_unicode_16x16.png", FontLayout::Tcod)
-        .font("arial10x10.png", FontLayout::Tcod)
-        .font_type(FontType::Greyscale)
-        .size(screen_size.x, screen_size.y)
-        .title("A Rogue-like!")
-        .init();
+            //  .font("consolas_unicode_16x16.png", FontLayout::Tcod)
+            .font("arial10x10.png", FontLayout::Tcod)
+            .font_type(FontType::Greyscale)
+            .size(screen_size.x, screen_size.y)
+            .title("A Rogue-like!")
+            .init();
 
         let con = Offscreen::new(state.map.width as i32, state.map.height as i32);
 
-        Tcod { screen_size, root, con }
+        Tcod {
+            screen_size,
+            root,
+            con,
+        }
     }
 }
 
@@ -43,11 +44,9 @@ pub struct State {
 }
 
 impl State {
-    pub fn new (map_width: u16, map_height: u16) -> Self {
+    pub fn new(map_width: u16, map_height: u16) -> Self {
         let player = Player::new(Pos::new(map_width as i32 / 2, map_height as i32 / 2));
-        let npcs = vec![ 
-            enemy::basic_enemy(player.pos.move_by(5, 1), 10),
-        ];
+        let npcs = vec![enemy::basic_enemy(player.pos.move_by(5, 1), 10)];
         let map = Map::new(map_width, map_height);
         State { player, npcs, map }
     }
@@ -60,7 +59,7 @@ impl State {
         self.player.draw(con);
     }
 
-    pub fn draw_map(&self, tile_color: fn (Tile) -> Option<Color>, con: &mut dyn Console) {
+    pub fn draw_map(&self, tile_color: fn(Tile) -> Option<Color>, con: &mut dyn Console) {
         for y in 0..self.map.height as i32 {
             for x in 0..self.map.width as i32 {
                 let wall = self.map[Pos { x, y }];
@@ -73,6 +72,8 @@ impl State {
 }
 
 fn input_dispatch(state: &mut State, key: Key) -> bool {
+    use tcod::input::KeyCode::*;
+
     if key.code == Escape {
         return false;
     }
@@ -86,7 +87,11 @@ fn input_dispatch(state: &mut State, key: Key) -> bool {
         _ => (),
     };
 
-    if 0 <= target_pos.x && target_pos.y < state.map.width as i32 && 0 <= target_pos.y && target_pos.y < state.map.height as i32 {
+    if 0 <= target_pos.x
+        && target_pos.y < state.map.width as i32
+        && 0 <= target_pos.y
+        && target_pos.y < state.map.height as i32
+    {
         if state.map[target_pos] == Tile::Empty {
             state.player.pos = target_pos;
         }
@@ -98,11 +103,10 @@ fn input_dispatch(state: &mut State, key: Key) -> bool {
 fn tile_color(tile: Tile) -> Option<Color> {
     match tile {
         Tile::Empty => None,
-        Tile::Ground => Some(BLUE),
-        Tile::Wall => Some(RED),
+        Tile::Ground => Some(colors::BLUE),
+        Tile::Wall => Some(colors::RED),
     }
 }
-
 
 const LIMIT_FPS: i32 = 20;
 
@@ -115,7 +119,7 @@ fn main() {
     }
 
     tcod::system::set_fps(LIMIT_FPS);
-    
+
     while !tcod.root.window_closed() {
         //  Clear the offscreen
         tcod.con.clear();
@@ -124,15 +128,22 @@ fn main() {
         state.draw_characters(&mut tcod.con);
 
         //  Draw the offscreen onto the root screen and flush
-        blit(&tcod.con, (0, 0), (tcod.screen_size.x, tcod.screen_size.y), &mut tcod.root, (0, 0), 1.0, 1.0);
+        blit(
+            &tcod.con,
+            (0, 0),
+            (tcod.screen_size.x, tcod.screen_size.y),
+            &mut tcod.root,
+            (0, 0),
+            1.0,
+            1.0,
+        );
         tcod.root.flush();
 
         //  Input handling
         let key = tcod.root.wait_for_keypress(true);
-        let success = input_dispatch(&mut state, key); 
+        let success = input_dispatch(&mut state, key);
         if !success {
             break;
         }
     }
 }
-
