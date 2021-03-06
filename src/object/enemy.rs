@@ -1,9 +1,11 @@
 use super::*;
 
+#[derive(Clone)]
 enum Movement {
     Simple,
 }
 
+#[derive(Clone)]
 pub struct Enemy { 
     pub pos: Pos,
     pub health: Health,

@@ -2,6 +2,8 @@ pub mod map;
 pub mod object;
 pub mod pos;
 
+use std::collections::hash_set::HashSet;
+
 use tcod::{colors, colors::Color, console::*, input::Key};
 
 use map::*;
@@ -39,14 +41,14 @@ impl Tcod {
 
 pub struct State {
     player: Player,
-    npcs: Vec<Enemy>,
+    npcs: HashSet<Enemy>,
     map: Map,
 }
 
 impl State {
     pub fn new(map_width: u16, map_height: u16) -> Self {
         let player = Player::new(Pos::new(map_width as i32 / 2, map_height as i32 / 2));
-        let npcs = vec![enemy::basic_enemy(player.pos.move_by(5, 1), 10)];
+        let npcs = [].iter().cloned().collect(); vec![enemy::basic_enemy(player.pos.move_by(5, 1), 10)];
         let map = Map::new(map_width, map_height);
         State { player, npcs, map }
     }

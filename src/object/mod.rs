@@ -20,6 +20,7 @@ pub trait Damage {
     fn take_damage(&mut self, damage: u32);
 }
 
+#[derive(Clone)]
 pub struct Health {
     pub hp: u32,
     pub ac: u32,
