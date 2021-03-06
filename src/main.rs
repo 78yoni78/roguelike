@@ -145,5 +145,9 @@ fn main() {
         if !success {
             break;
         }
+
+        for npc in state.npcs.iter_mut() {
+            npc.turn(&mut state);
+        }
     }
 }
