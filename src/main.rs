@@ -2,7 +2,6 @@ pub mod pos;
 pub mod map;
 pub mod object;
 
-use std::iter::*;
 use tcod::colors::*;
 use tcod::console::*;
 use tcod::input::Key;
