@@ -3,18 +3,42 @@ use rand::prelude::*;
 use crate::map::*;
 use crate::pos::*;
 
-/// A rectangle on the map, used to characterize a room.
-#[derive(Clone, Copy, Debug)]
-struct Rect {
+trait Room {
+    fn carve_walls(&self, map: &mut Map);
+    fn carve_floors(&self, map: &mut Map);
+}
+
+#[derive(Debug, Clone, Copy)]
+struct RectRoom {
     x1: i32,
     y1: i32,
     x2: i32,
     y2: i32,
 }
 
-impl Rect {
+#[derive(Debug, Clone, Copy)]
+struct HCorridor {
+    x1: i32,
+    x2: i32,
+    y: i32,
+}
+
+struct Dungeon {
+    rect_rooms: Vec<RectRoom>,
+    h_corridors: Vec<HCorridor>,
+    v_corridors: Vec<VCorridor>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct VCorridor {
+    y1: i32,
+    y2: i32,
+    x: i32,
+}
+
+impl RectRoom {
     pub fn new(x: i32, y: i32, w: u16, h: u16) -> Self {
-        Rect {
+        RectRoom {
             x1: x,
             y1: y,
             x2: x + w as i32,
@@ -26,7 +50,7 @@ impl Rect {
         Pos::new((self.x1 + self.x2) / 2, (self.y1 + self.y2) / 2)
     }
     
-    pub fn intersects_with(&self, other: &Rect) -> bool {
+    pub fn intersects_with(&self, other: &Self) -> bool {
         // returns true if this rectangle intersects with another one
         (self.x1 <= other.x2)
             && (self.x2 >= other.x1)
@@ -35,31 +59,60 @@ impl Rect {
     }
 }
 
-fn carve_room(room: Rect, map: &mut Map) {
-    // go through the tiles in the rectangle and make them passable
-    for x in (room.x1 + 1)..room.x2 {
-        for y in (room.y1 + 1)..room.y2 {
-            let pos = Pos::new(x, y);
-            map[pos] = Tile::Empty;
+impl Room for RectRoom {
+    fn carve_walls(&self, map: &mut Map) {
+        for x in self.x1..=self.x2 {
+            map[Pos { x, y: self.y1 }] = Tile::Wall;    
+            map[Pos { x, y: self.y2 }] = Tile::Wall;    
+        }
+        for y in self.y1..=self.y2 {
+            map[Pos { y, x: self.x1 }] = Tile::Wall;    
+            map[Pos { y, x: self.x2 }] = Tile::Wall;    
+        }
+    }
+    fn carve_floors(&self, map: &mut Map) {
+        for x in self.x1+1..self.x2 {
+            for y in self.y1+1..self.y2 {
+                let pos = Pos::new(x, y);
+                map[pos] = Tile::Ground;
+            }
         }
     }
 }
 
-fn carve_horizontal_tunnel(x1: i32, x2: i32, y: i32, map: &mut Map) {
-    use std::cmp::{min, max};
-    // horizontal tunnel. `min()` and `max()` are used in case `x1 > x2`
-    for x in min(x1, x2)..(max(x1, x2) + 1) {
-        let pos = Pos::new(x, y);
-        map[pos] = Tile::Empty;
+impl Room for HCorridor {
+    fn carve_walls(&self, map: &mut Map) {
+        for y in self.y-1..=self.y+1 {
+            if 0 <= y && y < map.height as i32 {
+                for x in self.x1-1..=self.x2+1 {
+                    map[Pos {x, y}] = Tile::Wall;
+                }
+            }
+        }
+    }
+
+    fn carve_floors(&self, map: &mut Map) {
+        for x in self.x1..=self.x2 {
+            map[Pos {x, y: self.y}] = Tile::Ground;
+        }
     }
 }
 
-fn carve_vertical_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
-    use std::cmp::{min, max};
-    // vertical tunnel
-    for y in min(y1, y2)..(max(y1, y2) + 1) {
-        let pos = Pos::new(x, y);
-        map[pos] = Tile::Empty;
+impl Room for VCorridor {
+    fn carve_walls(&self, map: &mut Map) {
+        for x in self.x-1..=self.x+1 {
+            if 0 <= x && x < map.width as i32 {
+                for y in self.y1-1..=self.y2+1 {
+                    map[Pos {x, y}] = Tile::Wall;
+                }
+            }
+        }
+    }
+
+    fn carve_floors(&self, map: &mut Map) {
+        for y in self.y1..=self.y2 {
+            map[Pos {y, x: self.x}] = Tile::Ground;
+        }
     }
 }
 
@@ -79,7 +132,7 @@ impl Default for DungeonConfig {
     }
 }
 
-fn generate_room(map_width: u16, map_height: u16, DungeonConfig { room_size: (room_size_min, room_size_max), rng, .. }: &mut DungeonConfig) -> Rect {
+fn generate_room(map_width: u16, map_height: u16, DungeonConfig { room_size: (room_size_min, room_size_max), rng, .. }: &mut DungeonConfig) -> RectRoom {
     // random width and height
     let w = rng.gen_range(*room_size_min..=*room_size_max);
     let h = rng.gen_range(*room_size_min..=*room_size_max);
@@ -87,52 +140,63 @@ fn generate_room(map_width: u16, map_height: u16, DungeonConfig { room_size: (ro
     let x = rng.gen_range(0..map_width - w);
     let y = rng.gen_range(0..map_height - h);
 
-    Rect::new(x as i32, y as i32, w, h)
+    RectRoom::new(x as i32, y as i32, w, h)
 }
 
 pub fn generate(width: u16, height: u16, config: &mut DungeonConfig) -> (Map, Pos) {
     let mut map = Map::new(width, height);
     for x in 0..width {
         for y in 0..height {
-            map[Pos {x: x as i32, y: y as i32}] = Tile::Wall;
+            map[Pos {x: x as i32, y: y as i32}] = Tile::Empty;
         }
     }
 
-    let mut rooms = vec![];
+    let mut dungeon = Dungeon {
+        rect_rooms: vec![],
+        h_corridors: vec![],
+        v_corridors: vec![],
+    };
 
-    //  generate first room, place player
-    let first_room = generate_room(width, height, config); 
-    carve_room(first_room, &mut map);
-    rooms.push(first_room);
-    let player_pos = first_room.center();
-
-    for _ in 1..config.max_rooms {
-        let new_room = generate_room(width, height, config); 
-        let intersection = rooms.iter().any(|other_room| new_room.intersects_with(other_room));
-
+    //  Add rect rooms
+    for _ in 0..config.max_rooms {
+        let new_rect = generate_room(width, height, config); 
+        let intersection = dungeon.rect_rooms.iter().any(|other_rect| new_rect.intersects_with(other_rect));
         if !intersection {
-            carve_room(new_room, &mut map);
-            // connect it to the previous room with a tunnel
-            
-            // center coordinates of the previous room
-            let prev_room = &rooms[rooms.len() - 1];
-            
-            let (Pos {x: prev_x, y: prev_y}, Pos {x: new_x, y: new_y}) = (prev_room.center(), new_room.center());
-            // toss a coin (random bool value -- either true or false)
-            if rand::random() {                
-                // first move horizontally, then vertically
-                carve_horizontal_tunnel(prev_x, new_x, prev_y, &mut map);
-                carve_vertical_tunnel(prev_y, new_y, new_x, &mut map);
-            } else {
-                // first move vertically, then horizontally
-                carve_vertical_tunnel(prev_y, new_y, prev_x, &mut map);
-                carve_horizontal_tunnel(prev_x, new_x, new_y, &mut map);
-            }
-        
-            // finally, append the new room to the list
-            rooms.push(new_room);
+            dungeon.rect_rooms.push(new_rect);
         }
-    } 
+    }
 
-    (map, player_pos)
+    for i in 1..dungeon.rect_rooms.len() {
+        use std::cmp::{min, max};
+        let prev = dungeon.rect_rooms[i - 1];
+        let next = dungeon.rect_rooms[i];
+
+        let (Pos {x: prev_x, y: prev_y}, Pos {x: next_x, y: next_y}) = (prev.center(), next.center());
+        if rand::random() {                
+            // first move horizontally, then vertically
+            dungeon.h_corridors.push(HCorridor{
+                x1: min(prev_x, next_x), x2: max(prev_x, next_x), y: prev_y
+            });
+            dungeon.v_corridors.push(VCorridor{
+                y1: min(prev_y, next_y), y2: max(prev_y, next_y), x: next_x
+            });
+        } else {
+            // first move vertically, then horizontally
+            dungeon.v_corridors.push(VCorridor{
+                y1: min(prev_y, next_y), y2: max(prev_y, next_y), x: prev_x
+            });
+            dungeon.h_corridors.push(HCorridor{
+                x1: min(prev_x, next_x), x2: max(prev_x, next_x), y: next_y
+            });
+        }
+    }
+
+    for room in dungeon.rect_rooms.iter().map(|x| x as &dyn Room).chain(dungeon.h_corridors.iter().map(|x| x as &dyn Room)).chain(dungeon.v_corridors.iter().map(|x| x as &dyn Room)) {
+        room.carve_walls(&mut map);
+    }
+    for room in dungeon.rect_rooms.iter().map(|x| x as &dyn Room).chain(dungeon.h_corridors.iter().map(|x| x as &dyn Room)).chain(dungeon.v_corridors.iter().map(|x| x as &dyn Room)) {
+        room.carve_floors(&mut map);
+    }
+
+    (map, dungeon.rect_rooms[0].center())
 }
