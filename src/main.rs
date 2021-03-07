@@ -1,9 +1,11 @@
 pub mod map;
+pub mod map_gen;
 pub mod object;
 pub mod pos;
 
 use std::collections::hash_map::HashMap;
 
+use map_gen::{DungeonConfig, generate};
 use tcod::{colors, colors::Color, console::*, input::Key};
 
 use map::*;
@@ -119,9 +121,12 @@ fn main() {
     let mut state = State::new(80, 45);
     let mut tcod = Tcod::new(&state, Pos::new(80, 50));
 
-    for x in 0..std::cmp::min(state.map.width, state.map.height) as i32 {
-        state.map[Pos::new(x, x)] = Tile::Wall;
-    }
+    let (map, starting_pos) = generate(80, 45, &mut DungeonConfig::default());
+    state.map = map;
+    state.player.pos = starting_pos;
+    //for x in 0..std::cmp::min(state.map.width, state.map.height) as i32 {
+    //    state.map[Pos::new(x, x)] = Tile::Wall;
+    //}
 
     tcod::system::set_fps(LIMIT_FPS);
 

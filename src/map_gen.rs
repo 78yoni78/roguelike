@@ -92,6 +92,11 @@ fn generate_room(map_width: u16, map_height: u16, DungeonConfig { room_size: (ro
 
 pub fn generate(width: u16, height: u16, config: &mut DungeonConfig) -> (Map, Pos) {
     let mut map = Map::new(width, height);
+    for x in 0..width {
+        for y in 0..height {
+            map[Pos {x: x as i32, y: y as i32}] = Tile::Wall;
+        }
+    }
 
     let mut rooms = vec![];
 
@@ -101,27 +106,27 @@ pub fn generate(width: u16, height: u16, config: &mut DungeonConfig) -> (Map, Po
     rooms.push(first_room);
     let player_pos = first_room.center();
 
-    for i in 1..config.max_rooms {
+    for _ in 1..config.max_rooms {
         let new_room = generate_room(width, height, config); 
         let intersection = rooms.iter().any(|other_room| new_room.intersects_with(other_room));
 
         if !intersection {
             carve_room(new_room, &mut map);
             // connect it to the previous room with a tunnel
-
+            
             // center coordinates of the previous room
-            let prev_room = &rooms[i as usize - 1];
-
+            let prev_room = &rooms[rooms.len() - 1];
+            
             let (Pos {x: prev_x, y: prev_y}, Pos {x: new_x, y: new_y}) = (prev_room.center(), new_room.center());
             // toss a coin (random bool value -- either true or false)
-            if rand::random() {
+            if rand::random() {                
                 // first move horizontally, then vertically
                 carve_horizontal_tunnel(prev_x, new_x, prev_y, &mut map);
                 carve_vertical_tunnel(prev_y, new_y, new_x, &mut map);
             } else {
                 // first move vertically, then horizontally
-                carve_horizontal_tunnel(prev_y, new_y, prev_x, &mut map);
-                carve_vertical_tunnel(prev_x, new_x, new_y, &mut map);
+                carve_vertical_tunnel(prev_y, new_y, prev_x, &mut map);
+                carve_horizontal_tunnel(prev_x, new_x, new_y, &mut map);
             }
         
             // finally, append the new room to the list
