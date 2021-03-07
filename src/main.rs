@@ -99,7 +99,7 @@ fn input_dispatch(state: &mut State, key: Key) -> bool {
         && 0 <= target_pos.y
         && target_pos.y < state.map.height as i32
     {
-        if state.map[target_pos] == Tile::Empty {
+        if state.map[target_pos] != Tile::Wall {
             state.player.pos = target_pos;
         }
     }
