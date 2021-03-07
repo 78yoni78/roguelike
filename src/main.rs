@@ -5,7 +5,7 @@ pub mod pos;
 
 use std::collections::hash_map::HashMap;
 
-use map_gen::{DungeonConfig, generate};
+use map_gen::DungeonConfig;
 use tcod::{colors, colors::Color, console::*, input::Key};
 
 use map::*;
@@ -111,7 +111,7 @@ fn tile_color(tile: Tile) -> Option<Color> {
     match tile {
         Tile::Empty => None,
         Tile::Ground => Some(colors::BLUE),
-        Tile::Wall => Some(colors::RED),
+        Tile::Wall => Some(colors::DARK_GREY),
     }
 }
 
@@ -121,7 +121,7 @@ fn main() {
     let mut state = State::new(80, 45);
     let mut tcod = Tcod::new(&state, Pos::new(80, 50));
 
-    let (map, starting_pos) = generate(80, 45, &mut DungeonConfig::default());
+    let (map, starting_pos) = map_gen::generate(80, 45, &mut DungeonConfig::default());
     state.map = map;
     state.player.pos = starting_pos;
     //for x in 0..std::cmp::min(state.map.width, state.map.height) as i32 {
