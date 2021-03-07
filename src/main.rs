@@ -50,7 +50,7 @@ pub struct State {
 
 impl State {
     pub fn new(map_width: u16, map_height: u16) -> Self {
-        let player = Player::new(Pos::new(map_width as i32 / 2, map_height as i32 / 2));
+        let player = Player::new(Pos::new(map_width as i32 / 2, map_height as i32 / 2), 10);
         let npcs = [
             (0, enemy::basic_enemy(player.pos.move_by(5, 1), 10))
         ].iter().cloned().collect(); 

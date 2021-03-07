@@ -2,14 +2,15 @@ use super::*;
 
 pub struct Player {
     pub pos: Pos,
+    pub health: Health,
 }
 
 impl Player {
     const COLOR: Color = colors::WHITE;
     const CH: char = '@';
 
-    pub fn new(pos: Pos) -> Self {
-        Player { pos }
+    pub fn new(pos: Pos, max_hp: u32) -> Self {
+        Player { pos, health: Health { hp: max_hp, ac: 0 } }
     }
 }
 
