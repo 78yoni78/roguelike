@@ -1,4 +1,5 @@
 use super::*;
+use crate::map::Tile;
 
 #[derive(Clone)]
 enum Movement {
@@ -28,8 +29,22 @@ impl Turn for Enemy {
             Simple => {
                 let x_diff = state.player.pos.x - self.pos.x;
                 let y_diff = state.player.pos.y - self.pos.y;
-        
-                self.pos.move_by_inplace(x_diff.signum(), y_diff.signum());
+                let (dx, dy) = (x_diff.signum(), y_diff.signum());
+
+                let new_pos = self.pos.move_by(dx, dy);
+                if state.map[new_pos] != Tile::Wall {
+                    self.pos = new_pos;
+                } else {
+                    let new_pos = self.pos.move_by(dx, 0);
+                    if state.map[new_pos] != Tile::Wall {
+                        self.pos = new_pos;
+                    } else {
+                        let new_pos = self.pos.move_by(0, dy);
+                        if state.map[new_pos] != Tile::Wall {
+                            self.pos = new_pos;
+                        }
+                    }
+                }
             }
         }
     }
