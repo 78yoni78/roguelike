@@ -122,6 +122,21 @@ pub struct DungeonConfig {
     rng: rand::rngs::ThreadRng,
 }
 
+impl DungeonConfig {
+    fn random_rect_room(&mut self, map_width: u16, map_height: u16) -> RectRoom {
+        let DungeonConfig { room_size: (room_size_min, room_size_max), rng, .. } = self;
+
+        // random width and height
+        let w = rng.gen_range(*room_size_min..=*room_size_max);
+        let h = rng.gen_range(*room_size_min..=*room_size_max);
+        // random position without going out of the boundaries of the map
+        let x = rng.gen_range(0..map_width - w);
+        let y = rng.gen_range(0..map_height - h);
+
+        RectRoom::new(x as i32, y as i32, w, h)
+    }
+}
+
 impl Default for DungeonConfig {
     fn default() -> Self {
         DungeonConfig {
@@ -130,17 +145,6 @@ impl Default for DungeonConfig {
             rng: rand::thread_rng(),
         }
     }
-}
-
-fn generate_room(map_width: u16, map_height: u16, DungeonConfig { room_size: (room_size_min, room_size_max), rng, .. }: &mut DungeonConfig) -> RectRoom {
-    // random width and height
-    let w = rng.gen_range(*room_size_min..=*room_size_max);
-    let h = rng.gen_range(*room_size_min..=*room_size_max);
-    // random position without going out of the boundaries of the map
-    let x = rng.gen_range(0..map_width - w);
-    let y = rng.gen_range(0..map_height - h);
-
-    RectRoom::new(x as i32, y as i32, w, h)
 }
 
 pub fn generate(width: u16, height: u16, config: &mut DungeonConfig) -> (Map, Pos) {
@@ -159,7 +163,7 @@ pub fn generate(width: u16, height: u16, config: &mut DungeonConfig) -> (Map, Po
 
     //  Add rect rooms
     for _ in 0..config.max_rooms {
-        let new_rect = generate_room(width, height, config); 
+        let new_rect = config.random_rect_room(width, height); 
         let intersection = dungeon.rect_rooms.iter().any(|other_rect| new_rect.intersects_with(other_rect));
         if !intersection {
             dungeon.rect_rooms.push(new_rect);
