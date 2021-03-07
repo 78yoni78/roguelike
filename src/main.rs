@@ -1,11 +1,11 @@
 pub mod map;
-pub mod map_gen;
+pub mod dungeon_gen;
 pub mod object;
 pub mod pos;
 
 use std::collections::hash_map::HashMap;
 
-use map_gen::DungeonConfig;
+use dungeon_gen::DungeonConfig;
 use tcod::{colors, colors::Color, console::*, input::Key};
 
 use map::*;
@@ -121,12 +121,12 @@ fn main() {
     let mut state = State::new(80, 45);
     let mut tcod = Tcod::new(&state, Pos::new(80, 50));
 
-    let dungeon = map_gen::generate({
+    let dungeon = dungeon_gen::generate({
         let mut c = DungeonConfig::default();
         c.size = (80, 45);
         c
     });
-    let map = map_gen::to_map(&dungeon); 
+    let map = dungeon_gen::to_map(&dungeon); 
     state.map = map;
     state.player.pos = dungeon.rect_rooms[0].center();
     //for x in 0..std::cmp::min(state.map.width, state.map.height) as i32 {
