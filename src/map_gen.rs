@@ -9,7 +9,7 @@ trait Room {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct RectRoom {
+pub struct RectRoom {
     x1: i32,
     y1: i32,
     x2: i32,
@@ -17,20 +17,21 @@ struct RectRoom {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct HCorridor {
+pub struct HCorridor {
     x1: i32,
     x2: i32,
     y: i32,
 }
 
-struct Dungeon {
-    rect_rooms: Vec<RectRoom>,
-    h_corridors: Vec<HCorridor>,
-    v_corridors: Vec<VCorridor>,
+pub struct Dungeon {
+    config: DungeonConfig,
+    pub rect_rooms: Vec<RectRoom>,
+    pub h_corridors: Vec<HCorridor>,
+    pub v_corridors: Vec<VCorridor>,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct VCorridor {
+pub struct VCorridor {
     y1: i32,
     y2: i32,
     x: i32,
@@ -117,9 +118,10 @@ impl Room for VCorridor {
 }
 
 pub struct DungeonConfig {
-    room_size: (u16, u16),
-    max_rooms: u16,
-    rng: rand::rngs::ThreadRng,
+    pub size: (u16, u16),
+    pub room_size: (u16, u16),
+    pub max_rooms: u16,
+    pub rng: rand::rngs::ThreadRng,
 }
 
 impl DungeonConfig {
@@ -140,6 +142,7 @@ impl DungeonConfig {
 impl Default for DungeonConfig {
     fn default() -> Self {
         DungeonConfig {
+            size: (80, 45),
             room_size: (6, 10),
             max_rooms: 30,
             rng: rand::thread_rng(),
@@ -147,23 +150,17 @@ impl Default for DungeonConfig {
     }
 }
 
-pub fn generate(width: u16, height: u16, config: &mut DungeonConfig) -> (Map, Pos) {
-    let mut map = Map::new(width, height);
-    for x in 0..width {
-        for y in 0..height {
-            map[Pos {x: x as i32, y: y as i32}] = Tile::Empty;
-        }
-    }
-
+pub fn generate(config: DungeonConfig) -> Dungeon {
     let mut dungeon = Dungeon {
+        config,
         rect_rooms: vec![],
         h_corridors: vec![],
         v_corridors: vec![],
     };
 
     //  Add rect rooms
-    for _ in 0..config.max_rooms {
-        let new_rect = config.random_rect_room(width, height); 
+    for _ in 0..dungeon.config.max_rooms {
+        let new_rect = dungeon.config.random_rect_room(dungeon.config.size.0, dungeon.config.size.1); 
         let intersection = dungeon.rect_rooms.iter().any(|other_rect| new_rect.intersects_with(other_rect));
         if !intersection {
             dungeon.rect_rooms.push(new_rect);
@@ -195,6 +192,17 @@ pub fn generate(width: u16, height: u16, config: &mut DungeonConfig) -> (Map, Po
         }
     }
 
+    dungeon
+}
+
+pub fn to_map(dungeon: &Dungeon) -> Map {
+    let mut map = Map::new(dungeon.config.size.0, dungeon.config.size.1);
+    for x in 0..map.width {
+        for y in 0..map.height {
+            map[Pos {x: x as i32, y: y as i32}] = Tile::Empty;
+        }
+    }
+
     for room in dungeon.rect_rooms.iter().map(|x| x as &dyn Room).chain(dungeon.h_corridors.iter().map(|x| x as &dyn Room)).chain(dungeon.v_corridors.iter().map(|x| x as &dyn Room)) {
         room.carve_walls(&mut map);
     }
@@ -202,5 +210,5 @@ pub fn generate(width: u16, height: u16, config: &mut DungeonConfig) -> (Map, Po
         room.carve_floors(&mut map);
     }
 
-    (map, dungeon.rect_rooms[0].center())
+    map
 }
