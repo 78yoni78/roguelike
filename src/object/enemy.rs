@@ -15,6 +15,17 @@ pub struct Enemy {
     movement: Movement,
 }
 
+impl Enemy {
+    pub fn attack(&mut self, target: &mut dyn Damage) {
+        target.take_damage(1);
+    }
+
+    pub fn can_attack(&mut self, target: Pos) -> bool {
+        (self.pos.x - target.x).abs() <= 1 &&
+        (self.pos.y - target.y).abs() <= 1
+    }
+}
+
 impl Draw for Enemy {
     fn draw(&self, con: &mut dyn tcod::Console) {
         con.set_default_foreground(self.color);
@@ -24,6 +35,11 @@ impl Draw for Enemy {
 
 impl Turn for Enemy {
     fn turn(&mut self, state: &mut State) {
+        if self.can_attack(state.player.pos) {
+            self.attack(&mut state.player.health);
+            return;
+        }
+
         use Movement::*;
         match self.movement {
             Simple => {
