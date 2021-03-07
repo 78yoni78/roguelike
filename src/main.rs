@@ -110,8 +110,8 @@ fn input_dispatch(state: &mut State, key: Key) -> bool {
 fn tile_color(tile: Tile) -> Option<Color> {
     match tile {
         Tile::Empty => None,
-        Tile::Ground => Some(colors::BLUE),
-        Tile::Wall => Some(colors::DARK_GREY),
+        Tile::Ground => Some(colors::DARK_GREY),
+        Tile::Wall => Some(colors::GREY),
     }
 }
 
