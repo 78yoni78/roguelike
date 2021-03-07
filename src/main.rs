@@ -121,12 +121,12 @@ fn main() {
     let mut state = State::new(80, 45);
     let mut tcod = Tcod::new(&state, Pos::new(80, 50));
 
-    let dungeon = dungeon_gen::generate({
+    let dungeon = {
         let mut c = DungeonConfig::default();
         c.size = (80, 45);
-        c
-    });
-    let map = dungeon_gen::to_map(&dungeon); 
+        c.generate()
+    };
+    let map = dungeon.as_map(); 
     state.map = map;
     state.player.pos = dungeon.rect_rooms[0].center();
     //for x in 0..std::cmp::min(state.map.width, state.map.height) as i32 {

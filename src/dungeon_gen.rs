@@ -5,24 +5,24 @@ use crate::pos::*;
 
 #[derive(Debug, Clone, Copy)]
 pub struct RectRoom {
-    x1: i32,
-    y1: i32,
-    x2: i32,
-    y2: i32,
+    pub x1: i32,
+    pub y1: i32,
+    pub x2: i32,
+    pub y2: i32,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct HCorridor {
-    x1: i32,
-    x2: i32,
-    y: i32,
+    pub x1: i32,
+    pub x2: i32,
+    pub y: i32,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct VCorridor {
-    y1: i32,
-    y2: i32,
-    x: i32,
+    pub y1: i32,
+    pub y2: i32,
+    pub x: i32,
 }
 
 pub struct DungeonConfig {
@@ -38,6 +38,7 @@ pub struct Dungeon {
     pub h_corridors: Vec<HCorridor>,
     pub v_corridors: Vec<VCorridor>,
 }
+
 
 impl RectRoom {
     pub fn new(x: i32, y: i32, w: u16, h: u16) -> Self {
@@ -87,6 +88,7 @@ impl Default for DungeonConfig {
         }
     }
 }
+
 
 trait Room {
     fn carve_walls(&self, map: &mut Map);
@@ -150,65 +152,75 @@ impl Room for VCorridor {
     }
 }
 
-pub fn generate(config: DungeonConfig) -> Dungeon {
-    let mut dungeon = Dungeon {
-        config,
-        rect_rooms: vec![],
-        h_corridors: vec![],
-        v_corridors: vec![],
-    };
 
-    //  Add rect rooms
-    for _ in 0..dungeon.config.max_rooms {
-        let new_rect = dungeon.config.random_rect_room(dungeon.config.size.0, dungeon.config.size.1); 
-        let intersection = dungeon.rect_rooms.iter().any(|other_rect| new_rect.intersects_with(other_rect));
-        if !intersection {
-            dungeon.rect_rooms.push(new_rect);
+impl DungeonConfig {
+    pub fn generate(mut self) -> Dungeon {
+        let mut rect_rooms = vec![];
+        let mut h_corridors = vec![];
+        let mut v_corridors = vec![];
+    
+        //  Add rect rooms
+        for _ in 0..self.max_rooms {
+            let new_rect = self.random_rect_room(self.size.0, self.size.1); 
+            let intersection = rect_rooms.iter().any(|other_rect| new_rect.intersects_with(other_rect));
+            if !intersection {
+                rect_rooms.push(new_rect);
+            }
         }
-    }
-
-    for i in 1..dungeon.rect_rooms.len() {
-        use std::cmp::{min, max};
-        let prev = dungeon.rect_rooms[i - 1];
-        let next = dungeon.rect_rooms[i];
-
-        let (Pos {x: prev_x, y: prev_y}, Pos {x: next_x, y: next_y}) = (prev.center(), next.center());
-        if rand::random() {                
-            // first move horizontally, then vertically
-            dungeon.h_corridors.push(HCorridor{
-                x1: min(prev_x, next_x), x2: max(prev_x, next_x), y: prev_y
-            });
-            dungeon.v_corridors.push(VCorridor{
-                y1: min(prev_y, next_y), y2: max(prev_y, next_y), x: next_x
-            });
-        } else {
-            // first move vertically, then horizontally
-            dungeon.v_corridors.push(VCorridor{
-                y1: min(prev_y, next_y), y2: max(prev_y, next_y), x: prev_x
-            });
-            dungeon.h_corridors.push(HCorridor{
-                x1: min(prev_x, next_x), x2: max(prev_x, next_x), y: next_y
-            });
+    
+        for i in 1..rect_rooms.len() {
+            use std::cmp::{min, max};
+            let prev = rect_rooms[i - 1];
+            let next = rect_rooms[i];
+    
+            let (Pos {x: prev_x, y: prev_y}, Pos {x: next_x, y: next_y}) = (prev.center(), next.center());
+            if rand::random() {                
+                // first move horizontally, then vertically
+                h_corridors.push(HCorridor{
+                    x1: min(prev_x, next_x), x2: max(prev_x, next_x), y: prev_y
+                });
+                v_corridors.push(VCorridor{
+                    y1: min(prev_y, next_y), y2: max(prev_y, next_y), x: next_x
+                });
+            } else {
+                // first move vertically, then horizontally
+                v_corridors.push(VCorridor{
+                    y1: min(prev_y, next_y), y2: max(prev_y, next_y), x: prev_x
+                });
+                h_corridors.push(HCorridor{
+                    x1: min(prev_x, next_x), x2: max(prev_x, next_x), y: next_y
+                });
+            }
         }
+    
+        Dungeon { config: self, rect_rooms, h_corridors, v_corridors }
     }
-
-    dungeon
 }
 
-pub fn to_map(dungeon: &Dungeon) -> Map {
-    let mut map = Map::new(dungeon.config.size.0, dungeon.config.size.1);
-    for x in 0..map.width {
-        for y in 0..map.height {
-            map[Pos {x: x as i32, y: y as i32}] = Tile::Empty;
+impl Dungeon {
+    pub fn config(&self) -> &DungeonConfig { &self.config }
+
+    pub fn size(&self) -> (u16, u16) { self.config.size }
+    
+    pub fn width(&self) -> u16 { self.config.size.0 }
+    pub fn height(&self) -> u16 { self.config.size.1 }
+
+    fn rooms(&self) -> impl Iterator<Item=&dyn Room> {
+        self.rect_rooms.iter().map(|x| x as &dyn Room)
+        .chain(self.h_corridors.iter().map(|x| x as &dyn Room))
+        .chain(self.v_corridors.iter().map(|x| x as &dyn Room))
+    }
+
+    pub fn as_map(&self) -> Map {
+        let mut map = Map::new(self.width(), self.height());
+    
+        for room in self.rooms() {
+            room.carve_walls(&mut map);
         }
+        for room in self.rooms() {
+            room.carve_floors(&mut map);
+        }
+    
+        map
     }
-
-    for room in dungeon.rect_rooms.iter().map(|x| x as &dyn Room).chain(dungeon.h_corridors.iter().map(|x| x as &dyn Room)).chain(dungeon.v_corridors.iter().map(|x| x as &dyn Room)) {
-        room.carve_walls(&mut map);
-    }
-    for room in dungeon.rect_rooms.iter().map(|x| x as &dyn Room).chain(dungeon.h_corridors.iter().map(|x| x as &dyn Room)).chain(dungeon.v_corridors.iter().map(|x| x as &dyn Room)) {
-        room.carve_floors(&mut map);
-    }
-
-    map
 }
