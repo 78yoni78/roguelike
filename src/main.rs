@@ -14,15 +14,17 @@ use object::{enemy::Enemy, player::Player};
 use pos::*;
 
 type Map = map::Map;
+type FovMap = tcod::map::Map;
 
 pub struct Tcod {
     screen_size: Pos,
     root: Root,
     con: Offscreen,
+    fov_map: FovMap,
 }
 
 impl Tcod {
-    pub fn new(state: &State, screen_size: Pos) -> Self {
+    pub fn new(state: &State, screen_size: Pos, map: &Map) -> Self {
         let root = Root::initializer()
             //  .font("consolas_unicode_16x16.png", FontLayout::Tcod)
             .font("arial10x10.png", FontLayout::Tcod)
@@ -33,10 +35,22 @@ impl Tcod {
 
         let con = Offscreen::new(state.map.width as i32, state.map.height as i32);
 
+        let mut fov_map = tcod::map::Map::new(map.width as i32, map.height as i32);
+        for y in 0..map.height as i32 {
+            for x in 0..map.width as i32 {
+                match map[Pos{x, y}] {
+                    Tile::Empty => (),
+                    Tile::Wall => fov_map.set(x, y, false, false),
+                    Tile::Ground => fov_map.set(x, y, true, false),
+                }
+            }
+        }
+
         Tcod {
             screen_size,
             root,
             con,
+            fov_map,
         }
     }
 }
@@ -58,19 +72,21 @@ impl State {
         State { player, npcs, next_npc_id: 1, map }
     }
 
-    pub fn draw_characters(&self, con: &mut dyn Console) {
+    pub fn draw_characters(&self, con: &mut dyn Console, fov_map: &FovMap) {
         //  Draw state onto offscreen
         for (_, npc) in self.npcs.iter() {
-            npc.draw(con);
+            if fov_map.is_in_fov(npc.pos.x, npc.pos.y) {
+                npc.draw(con);
+            }
         }
         self.player.draw(con);
     }
 
-    pub fn draw_map(&self, tile_color: fn(Tile) -> Option<Color>, con: &mut dyn Console) {
+    pub fn draw_map(&self, tile_color: fn(Tile, bool) -> Option<Color>, con: &mut dyn Console, fov_map: &FovMap) {
         for y in 0..self.map.height as i32 {
             for x in 0..self.map.width as i32 {
                 let wall = self.map[Pos { x, y }];
-                if let Some(color) = tile_color(wall) {
+                if let Some(color) = tile_color(wall, fov_map.is_in_fov(x, y)) {
                     con.set_char_background(x, y, color, BackgroundFlag::Set);
                 }
             }
@@ -111,11 +127,13 @@ fn input_dispatch(state: &mut State, key: Key) -> bool {
     return true;
 }
 
-fn tile_color(tile: Tile) -> Option<Color> {
-    match tile {
-        Tile::Empty => None,
-        Tile::Ground => Some(colors::DARK_GREY),
-        Tile::Wall => Some(colors::GREY),
+fn tile_color(tile: Tile, visible: bool) -> Option<Color> {
+    match (tile, visible) {
+        (Tile::Empty, _) => None,
+        (Tile::Ground, true) => Some(colors::DARK_GREY),
+        (Tile::Ground, false) => None, //Some(colors::DARKER_GREY),
+        (Tile::Wall, true) => Some(colors::LIGHTER_GREY),
+        (Tile::Wall, false) => None, //Some(colors::GREY),
     }
 }
 
@@ -123,8 +141,6 @@ const LIMIT_FPS: i32 = 20;
 
 fn main() {
     let mut state = State::new(80, 45);
-    let mut tcod = Tcod::new(&state, Pos::new(80, 50));
-
     let dungeon = {
         let mut c = DungeonConfig::default();
         c.size = (80, 45);
@@ -136,15 +152,20 @@ fn main() {
     //for x in 0..std::cmp::min(state.map.width, state.map.height) as i32 {
     //    state.map[Pos::new(x, x)] = Tile::Wall;
     //}
+    let mut tcod = Tcod::new(&state, Pos::new(80, 50), &state.map);
+
 
     tcod::system::set_fps(LIMIT_FPS);
 
     while !tcod.root.window_closed() {
         //  Clear the offscreen
         tcod.con.clear();
+        
+        tcod.fov_map
+        .compute_fov(state.player.pos.x, state.player.pos.y, 15, true, tcod::map::FovAlgorithm::Diamond);
 
-        state.draw_map(tile_color, &mut tcod.con);
-        state.draw_characters(&mut tcod.con);
+        state.draw_map(tile_color, &mut tcod.con, &tcod.fov_map);
+        state.draw_characters(&mut tcod.con, &tcod.fov_map);
 
         //  Draw the offscreen onto the root screen and flush
         blit(
