@@ -85,6 +85,10 @@ fn input_dispatch(state: &mut State, key: Key) -> bool {
         return false;
     }
 
+    if let Key { code: Char, printable: 'a', alt: false, ctrl: false, shift: false, pressed: true, .. } = key {
+        state.player.attack(state.npcs.values_mut());
+    }
+
     let mut target_pos = state.player.pos;
     match key {
         Key { code: Up, .. } => target_pos.move_by_inplace(0, -1),

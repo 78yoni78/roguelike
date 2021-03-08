@@ -1,4 +1,5 @@
 use super::*;
+use super::enemy::Enemy;
 
 pub struct Player {
     pub pos: Pos,
@@ -12,6 +13,20 @@ impl Player {
     pub fn new(pos: Pos, max_hp: u32) -> Self {
         Player { pos, health: Health { hp: max_hp, ac: 0 } }
     }
+
+    fn can_reach(&mut self, target: Pos) -> bool {
+        (self.pos.x - target.x).abs() <= 1 &&
+        (self.pos.y - target.y).abs() <= 1
+    }
+    
+    pub fn attack<'a, I: IntoIterator<Item=&'a mut Enemy>>(&mut self, npcs: I) {
+        for npc in npcs {
+            if self.can_reach(npc.pos) {
+                npc.health.take_damage(1);
+            }
+        }
+    }
+
 }
 
 impl Draw for Player {
