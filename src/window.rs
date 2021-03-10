@@ -1,11 +1,14 @@
 use tcod::console::{Root, Offscreen, Console};
 
+use crate::input::{InputHandler, Key};
+
 #[derive(Debug)]
 pub struct Config {
     pub title: String,
     pub fps_limit: i32,
     pub size: (u16, u16),
 }
+
 pub struct Window {
     config: Config,
     root: Root,
@@ -49,6 +52,12 @@ impl Window {
             1.0,
         );
         self.root.flush();
+    }
+}
+
+impl InputHandler for Window {
+    fn wait_for_keypress(&mut self) -> Key {
+        self.root.wait_for_keypress(true)
     }
 }
 
