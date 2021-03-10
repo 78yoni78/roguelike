@@ -139,57 +139,74 @@ fn tile_color(tile: Tile, visible: bool) -> Option<Color> {
 
 const LIMIT_FPS: i32 = 20;
 
-fn main() {
-    let mut state = State::new(80, 45);
-    let dungeon = {
-        let mut c = DungeonConfig::default();
-        c.size = (80, 45);
-        c.generate()
-    };
-    let map = dungeon.as_map(); 
-    state.map = map;
-    state.player.pos = dungeon.rect_rooms[0].center();
-    //for x in 0..std::cmp::min(state.map.width, state.map.height) as i32 {
-    //    state.map[Pos::new(x, x)] = Tile::Wall;
-    //}
-    let mut tcod = Tcod::new(&state, Pos::new(80, 50), &state.map);
+// fn main() {
+//     let mut state = State::new(80, 45);
+//     let dungeon = {
+//         let mut c = DungeonConfig::default();
+//         c.size = (80, 45);
+//         c.generate()
+//     };
+//     let map = dungeon.as_map(); 
+//     state.map = map;
+//     state.player.pos = dungeon.rect_rooms[0].center();
+//     //for x in 0..std::cmp::min(state.map.width, state.map.height) as i32 {
+//     //    state.map[Pos::new(x, x)] = Tile::Wall;
+//     //}
+//     let mut tcod = Tcod::new(&state, Pos::new(80, 50), &state.map);
 
 
-    tcod::system::set_fps(LIMIT_FPS);
+//     tcod::system::set_fps(LIMIT_FPS);
 
-    while !tcod.root.window_closed() {
-        //  Clear the offscreen
-        tcod.con.clear();
+//     while !tcod.root.window_closed() {
+//         //  Clear the offscreen
+//         tcod.con.clear();
         
-        tcod.fov_map
-        .compute_fov(state.player.pos.x, state.player.pos.y, 15, true, tcod::map::FovAlgorithm::Diamond);
+//         tcod.fov_map
+//         .compute_fov(state.player.pos.x, state.player.pos.y, 15, true, tcod::map::FovAlgorithm::Diamond);
 
-        state.draw_map(tile_color, &mut tcod.con, &tcod.fov_map);
-        state.draw_characters(&mut tcod.con, &tcod.fov_map);
+//         state.draw_map(tile_color, &mut tcod.con, &tcod.fov_map);
+//         state.draw_characters(&mut tcod.con, &tcod.fov_map);
 
-        //  Draw the offscreen onto the root screen and flush
-        blit(
-            &tcod.con,
-            (0, 0),
-            (tcod.screen_size.x, tcod.screen_size.y),
-            &mut tcod.root,
-            (0, 0),
-            1.0,
-            1.0,
-        );
-        tcod.root.flush();
+//         //  Draw the offscreen onto the root screen and flush
+//         blit(
+//             &tcod.con,
+//             (0, 0),
+//             (tcod.screen_size.x, tcod.screen_size.y),
+//             &mut tcod.root,
+//             (0, 0),
+//             1.0,
+//             1.0,
+//         );
+//         tcod.root.flush();
 
-        //  Input handling
-        let key = tcod.root.wait_for_keypress(true);
-        let success = input_dispatch(&mut state, key);
-        if !success {
-            break;
-        }
+//         //  Input handling
+//         let key = tcod.root.wait_for_keypress(true);
+//         let success = input_dispatch(&mut state, key);
+//         if !success {
+//             break;
+//         }
 
-        for id in 0..state.next_npc_id {
-            let mut npc = state.npcs.remove(&id).unwrap();
-            npc.turn(&mut state);
-            state.npcs.insert(id, npc);
-        }
+//         for id in 0..state.next_npc_id {
+//             let mut npc = state.npcs.remove(&id).unwrap();
+//             npc.turn(&mut state);
+//             state.npcs.insert(id, npc);
+//         }
+//     }
+// }
+
+fn main() {
+    const fps_limit: i32 = 20;
+    const screen_size: (u16, u16) = (80, 50);
+
+    //  Create a 
+    let mut window = Window::new(screen_size, fps_limit);
+    let mut game = Game::new();
+
+    while !window.closed() {
+        window.redraw(|&mut con| game.draw(con));
+
+        game.player_turn();
+
+        game.npc_turn();
     }
 }
