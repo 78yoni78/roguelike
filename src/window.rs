@@ -1,4 +1,4 @@
-use tcod::console::{Root, Offscreen};
+use tcod::console::{Root, Offscreen, Console};
 
 #[derive(Debug)]
 pub struct Config {
@@ -26,6 +26,29 @@ impl Window {
         tcod::system::set_fps(config.fps_limit);
     
         Window { config, root, game_screen }
+    }
+
+    pub fn closed(&self) -> bool {
+        self.root.window_closed()
+    }
+
+    pub fn redraw<F: FnMut(dyn Console)>(&mut self, func: F) {
+        use std::cmp::min;
+
+        //  Clear the offscreen
+        self.game_screen.clear();
+        func(&mut self.game_screen);
+        //  Draw the offscreen onto the root screen and flush
+        tcod::console::blit(
+            &self.game_screen,
+            (0, 0),
+            (min(self.game_screen.width(), self.size.0), min(self.game_screen.height(), self.size.1)),
+            &mut self.root,
+            (0, 0),
+            1.0,
+            1.0,
+        );
+        self.root.flush();
     }
 }
 
