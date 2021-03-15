@@ -35,7 +35,7 @@ impl Window {
         self.root.window_closed()
     }
 
-    pub fn redraw<F: FnMut(&mut dyn Console)>(&mut self, func: F) {
+    pub fn redraw<F: FnMut(&mut dyn Console)>(&mut self, mut func: F) {
         use std::cmp::min;
 
         //  Clear the offscreen
