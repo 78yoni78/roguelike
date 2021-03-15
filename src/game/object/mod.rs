@@ -28,8 +28,10 @@ pub struct Health {
 
 impl Damage for Health {
     fn take_damage(&mut self, damage: u32) {
-        if damage > self.ac {
-            self.hp -= damage - self.ac;
+        if damage <= self.ac {
+            return;
         }
+        let hp_taken = std::cmp::min(damage - self.ac, self.hp);    //  because you cant damage an enemy more than their hp
+        self.hp -= hp_taken;
     }
 }
