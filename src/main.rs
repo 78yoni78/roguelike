@@ -10,7 +10,6 @@ fn main() {
     const SIZE: (u16, u16) = (80, 50);
     const TITLE: &str = "My Game";
 
-    //  Create a 
     let mut window = Window::new(window::Config {
         title: TITLE.to_string(),
         size: SIZE,
