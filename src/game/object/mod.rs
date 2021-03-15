@@ -3,7 +3,7 @@ pub mod enemy;
 
 use tcod::{Color, colors};
 use crate::Game;
-use crate::pos::*;
+use super::map::Pos;
 
 /// Can be drawn
 pub trait Draw {

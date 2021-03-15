@@ -1,5 +1,8 @@
+mod pos;
+
 use std::ops::{Index, IndexMut};
-use crate::pos::*;
+
+pub use pos::Pos;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Tile {

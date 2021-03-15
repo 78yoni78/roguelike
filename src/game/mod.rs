@@ -1,12 +1,16 @@
+pub(self) mod map;
+mod dungeon_gen;
+mod object;
+
 use std::{collections::HashMap, ops::Mul};
 
-use crate::{dungeon_gen::{self, RectRoom}, pos::*};
 use crate::input::{InputHandler, Key};
-use crate::object::*;
-use crate::object::{player::Player, enemy, enemy::Enemy};
-use crate::map::{Map, Tile};
-use crate::dungeon_gen::{Dungeon, DungeonConfig};
-use tcod::map::Map as FovMap;
+
+use map::{Map, Tile, Pos};
+use dungeon_gen::{Dungeon, DungeonConfig};
+use object::*;
+use object::{player::Player, enemy::Enemy};
+type FovMap = tcod::map::Map;
 use tcod::Color;
 
 fn tile_color(tile: Tile, darkened: bool) -> Option<Color> {

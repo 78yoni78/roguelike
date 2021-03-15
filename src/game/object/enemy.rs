@@ -1,5 +1,5 @@
 use super::*;
-use crate::map::Tile;
+use super::super::map::Tile;
 
 #[derive(Clone)]
 enum Movement {

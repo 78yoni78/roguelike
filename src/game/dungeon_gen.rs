@@ -1,7 +1,6 @@
 use rand::prelude::*;
 
-use crate::map::*;
-use crate::pos::*;
+use super::map::{Map, Tile, Pos};
 
 #[derive(Debug, Clone, Copy)]
 pub struct RectRoom {
