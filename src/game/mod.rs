@@ -2,16 +2,19 @@ pub(self) mod map;
 mod dungeon_gen;
 mod object;
 
-use std::{collections::HashMap, ops::Mul};
+use std::collections::HashMap;
+use std::ops::Mul;
 
-use crate::input::{InputHandler, Key};
+use tcod::Color;
+
+use crate::input::{InputHandler, Key, KeyCode};
 
 use map::{Map, Tile, Pos};
 use dungeon_gen::{Dungeon, DungeonConfig};
 use object::*;
 use object::{player::Player, enemy::Enemy};
+
 type FovMap = tcod::map::Map;
-use tcod::Color;
 
 fn tile_color(tile: Tile, darkened: bool) -> Option<Color> {
     use tcod::colors::*;
@@ -84,7 +87,7 @@ impl Game {
     }
 
     pub fn player_turn(&mut self, input: &mut dyn InputHandler) -> bool {
-        use tcod::input::KeyCode::*;
+        use KeyCode::*;
         
         let key = input.wait_for_keypress();
         if key.code == Escape {
