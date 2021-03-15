@@ -1,8 +1,6 @@
 use super::*;
 use super::enemy::Enemy;
 
-use super::super::map;
-
 pub struct Player {
     pub pos: Pos,
     pub health: Health,
