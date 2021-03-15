@@ -1,6 +1,6 @@
 use std::{collections::HashMap, ops::Mul};
 
-use crate::pos::*;
+use crate::{dungeon_gen::{self, RectRoom}, pos::*};
 use crate::input::{InputHandler, Key};
 use crate::object::*;
 use crate::object::{player::Player, enemy, enemy::Enemy};
@@ -18,7 +18,7 @@ fn tile_color(tile: Tile, darkened: bool) -> Option<Color> {
         Tile::Wall => Some(LIGHTER_GREY),
     };
     if darkened {
-        if let Some(color) = ret {
+        if let Some(mut color) = ret {
             color = color.mul(0.5);
             color.b += 100; //  must be less than 255 / 0.5 =~ 127
             ret = Some(color);
@@ -61,7 +61,7 @@ impl Game {
         let dungeon = DungeonConfig::default().generate();
         let map = dungeon.as_map();
         let player = Player::new(dungeon.rect_rooms[0].center(), 20);
-        
+        let fov_map = fov_map_from_map(&map);        
 
         let mut game = Game {
             player,
@@ -69,10 +69,10 @@ impl Game {
             map,
             npcs: HashMap::new(),
             next_npc_id: 0,
-            fov_map: fov_map_from_map(&map),
+            fov_map,
         };
 
-        for rect_room in dungeon.rect_rooms.iter().skip(1) {
+        for rect_room in game.dungeon.rect_rooms.iter().skip(1).cloned().collect::<Vec<_>>() {
             game.add_enemy(enemy::basic_enemy(rect_room.center(), 5));
         }
 
@@ -116,7 +116,7 @@ impl Game {
     pub fn npc_turn(&mut self) {
         for id in 0..self.next_npc_id {
             let mut npc = self.npcs.remove(&id).unwrap();
-            npc.turn(&mut self);
+            npc.turn(self);
             self.npcs.insert(id, npc);
         }
     }
