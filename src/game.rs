@@ -125,8 +125,10 @@ impl Game {
         for y in 0..self.map.height as i32 {
             for x in 0..self.map.width as i32 {
                 let wall = self.map[Pos { x, y }];
-                if let Some(color) = tile_color(wall, self.fov_map.is_in_fov(x, y)) {
-                    con.set_char_background(x, y, color, tcod::BackgroundFlag::Set);
+                if self.fov_map.is_in_fov(x, y) {
+                    if let Some(color) = tile_color(wall, false) {
+                        con.set_char_background(x, y, color, tcod::BackgroundFlag::Set);
+                    }
                 }
             }
         }
