@@ -1,11 +1,6 @@
-pub mod map;
-pub mod dungeon_gen;
-pub mod object;
-pub mod pos;
-
+pub mod input;
 mod window;
 mod game;
-pub mod input;
 
 use window::Window;
 use game::Game;
