@@ -197,8 +197,10 @@ impl DungeonConfig {
 }
 
 impl Dungeon {
+    #[allow(dead_code)]
     pub fn config(&self) -> &DungeonConfig { &self.config }
-
+    
+    #[allow(dead_code)]
     pub fn size(&self) -> (u16, u16) { self.config.size }
     
     pub fn width(&self) -> u16 { self.config.size.0 }

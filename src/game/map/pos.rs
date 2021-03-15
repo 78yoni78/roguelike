@@ -15,6 +15,7 @@ impl Pos {
         Self::new(self.x + dx, self.y + dy)
     }
 
+    #[allow(dead_code)]
     pub const fn move_by_pos(self, other: Self) -> Self {
         Self::move_by(self, other.x, other.y)
     }
@@ -24,6 +25,7 @@ impl Pos {
         self.y += dy;
     }
 
+    #[allow(dead_code)]
     pub fn move_by_pos_inplace(&mut self, other: Self) {
         Self::move_by_inplace(self, other.x, other.y)
     }

@@ -22,10 +22,12 @@ impl Map {
         Map { width, height, tiles: vec![Tile::Empty; width as usize * height as usize] }
     }
 
+    #[allow(dead_code)]
     pub fn tiles(&self) -> impl Iterator<Item=&Tile> {
         self.tiles.iter()
     }
 
+    #[allow(dead_code)]
     pub fn tiles_mut(&mut self) -> impl Iterator<Item=&mut Tile> {
         self.tiles.iter_mut()
     }
