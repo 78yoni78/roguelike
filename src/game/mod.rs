@@ -122,9 +122,18 @@ impl Game {
 
     pub fn npc_turn(&mut self) {
         for id in 0..self.next_npc_id {
-            let mut npc = self.npcs.remove(&id).unwrap();
-            npc.turn(self);
-            self.npcs.insert(id, npc);
+            if let Some(enemy) = self.npcs.get(&id) {
+                if enemy.health.hp == 0 {
+                    self.npcs.remove(&id);
+                }
+            }
+        }
+
+        for id in 0..self.next_npc_id {
+            if let Some(mut npc) = self.npcs.remove(&id) {
+                npc.turn(self);
+                self.npcs.insert(id, npc);
+            }
         }
     }
 
