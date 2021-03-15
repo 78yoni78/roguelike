@@ -35,7 +35,7 @@ impl Window {
         self.root.window_closed()
     }
 
-    pub fn redraw<F: FnMut(dyn Console)>(&mut self, func: F) {
+    pub fn redraw<F: FnMut(&mut dyn Console)>(&mut self, func: F) {
         use std::cmp::min;
 
         //  Clear the offscreen
@@ -45,7 +45,7 @@ impl Window {
         tcod::console::blit(
             &self.game_screen,
             (0, 0),
-            (min(self.game_screen.width(), self.size.0), min(self.game_screen.height(), self.size.1)),
+            (min(self.game_screen.width(), self.config.size.0 as i32), min(self.game_screen.height(), self.config.size.1 as i32)),
             &mut self.root,
             (0, 0),
             1.0,
