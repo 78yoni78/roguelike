@@ -43,12 +43,12 @@ fn fov_map_from_map(map: &Map) -> FovMap {
 }
 
 pub struct Game {
-    player: Player,
-    npcs: HashMap<u32, Enemy>,
-    next_npc_id: u32,
-    dungeon: Dungeon,
-    map: Map,
-    fov_map: FovMap,
+    pub player: Player,
+    pub npcs: HashMap<u32, Enemy>,
+    pub next_npc_id: u32,
+    pub dungeon: Dungeon,
+    pub map: Map,
+    pub fov_map: FovMap,
 }
 
 impl Game {
