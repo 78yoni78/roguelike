@@ -1,4 +1,4 @@
-pub mod input;
+pub(self) mod input;
 mod window;
 mod game;
 
