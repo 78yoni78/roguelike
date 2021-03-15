@@ -34,7 +34,7 @@ impl Draw for Enemy {
 }
 
 impl Turn for Enemy {
-    fn turn(&mut self, state: &mut State) {
+    fn turn(&mut self, state: &mut Game) {
         if self.can_attack(state.player.pos) {
             self.attack(&mut state.player.health);
             return;

@@ -2,7 +2,7 @@ pub mod player;
 pub mod enemy;
 
 use tcod::{Color, colors};
-use crate::State;
+use crate::Game;
 use crate::pos::*;
 
 /// Can be drawn
@@ -12,7 +12,7 @@ pub trait Draw {
 
 /// Can take a turn
 pub trait Turn {
-    fn turn(&mut self, state: &mut State);
+    fn turn(&mut self, state: &mut Game);
 }
 
 /// Can take damage
