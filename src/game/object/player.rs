@@ -23,6 +23,7 @@ impl Player {
         for npc in npcs {
             if self.can_reach(npc.pos) {
                 npc.health.take_damage(1);
+                if rand::random() { npc.stun(); }
             }
         }
     }
