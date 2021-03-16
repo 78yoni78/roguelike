@@ -3,6 +3,7 @@ mod dungeon_gen;
 mod object;
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::ops::Mul;
 
 use tcod::Color;
@@ -56,6 +57,7 @@ pub struct Game {
     pub dungeon: Dungeon,
     pub map: Map,
     pub fov_map: FovMap,
+    pub tiles_seen: HashSet<Pos>,
 }
 
 impl Game {
@@ -77,6 +79,7 @@ impl Game {
             npcs: HashMap::new(),
             next_npc_id: 0,
             fov_map,
+            tiles_seen: HashSet::new()
         };
 
         for rect_room in game.dungeon.rect_rooms.iter().skip(1).cloned().collect::<Vec<_>>() {
@@ -141,8 +144,17 @@ impl Game {
         for y in 0..self.map.height as i32 {
             for x in 0..self.map.width as i32 {
                 let wall = self.map[Pos { x, y }];
+                
+                let mut draw_darkened = None; 
                 if self.fov_map.is_in_fov(x, y) {
-                    if let Some(color) = tile_color(wall, false) {
+                    self.tiles_seen.insert(Pos { x, y });
+                    draw_darkened = Some(false);
+                } else if self.tiles_seen.contains(&Pos { x, y }) {
+                    draw_darkened = Some(true);
+                }
+
+                if let Some(darkened) = draw_darkened {
+                    if let Some(color) = tile_color(wall, darkened) {
                         con.set_char_background(x, y, color, tcod::BackgroundFlag::Set);
                     }
                 }
