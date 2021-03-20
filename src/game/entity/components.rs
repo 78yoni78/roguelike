@@ -64,6 +64,20 @@ impl AllComponents {
     }
 }
 
+#[allow(unused_macros)]
+macro_rules! get {
+    ($components:expr, $entity:expr, $field:ident) => (
+        $components.$field.get(&($entity))
+    );
+    ($components:expr, $entity:expr, $field1:ident, $($fields: ident),+) => {
+        (get!($components, $entity, $field1),
+        get!($components, $entity, $($fields),+))
+    };
+}
+
+fn f(components: &AllComponents, entity: Entity) {
+    let x = get!(components, entity, positions, health);
+}
 
 
 impl Draw {

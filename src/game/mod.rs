@@ -96,19 +96,36 @@ impl Game {
         ret
     }
 
-    fn ai_turn(&mut self, e: Entity) {
+    fn ai_turn(&mut self, e: Entity) -> Option<()> {
         use EnemyMovement::*;
-        let enemy = self.components.enemies[&e];
-        if let &Some((player_entity, ref player)) = &self.components.player {
-            if let Some(player_position) = &self.components.positions.get(&player_entity) {
-            match enemy.movement {
-                Simple => {
-                    if Game::is_nearby(, p2) {
+        let enemy = self.components.enemies.get(&e)?;
+        let enemy_position = self.components.positions.get(&e)?;
+        let &(player_entity, _) = self.components.player.as_ref()?;
+        let player_position = self.components.positions.get(&player_entity)?;
+        match enemy.movement {
+            Simple => {
+                if Game::is_nearby(player_position, enemy_position) {
+                }
+                let x_diff = player_position.0 as i32 - enemy_position.0 as i32;
+                let y_diff = player_position.1 as i32 - enemy_position.1 as i32;
+                let (dx, dy) = (x_diff.signum(), y_diff.signum());
 
+                let mut new_position = enemy_position.clone();
+                new_position.0 = (enemy_position.0 as i32 + dx) as u16;
+                new_position.1 = (enemy_position.1 as i32 + dy) as u16;
+                if self.map[Pos::new(new_position.0 as i32, new_position.1 as i32)] == Tile::Wall {
+                    if self.map[Pos::new(new_position.0 as i32, enemy_position.1 as i32)] != Tile::Wall {
+                        new_position.1 = enemy_position.1;
+                    } else if self.map[Pos::new(enemy_position.0 as i32, new_position.1 as i32)] != Tile::Wall {
+                        new_position.0 = enemy_position.0;
+                    } else {
+                        new_position = enemy_position.clone(); 
                     }
-                },
+                }
+                self.components.positions.insert(e, new_position);
             }
-        }
+        };
+        Some(())
     }
 }
 
@@ -211,9 +228,9 @@ impl Game {
     pub fn npc_turn(&mut self) {
         self.remove_dead();
 
-        for (&e, enemy) in &self.components.enemies {
-            // enemy.turn();
-            self.ai_turn();
+        let enemy_entities: Vec<Entity> = self.components.enemies.keys().cloned().collect();
+        for e in enemy_entities {
+            self.ai_turn(e);
         }
     }
 
@@ -242,7 +259,7 @@ impl Game {
     pub fn draw_characters(&mut self, con: &mut dyn tcod::Console) {
         //  Draw state onto offscreen
         for (&e, draw) in &mut self.components.draws {
-            if let Some(position) = &self.components.positions.get(&e) {
+            if let Some(position) = self.components.positions.get(&e) {
                 if self.fov_map.is_in_fov(position.0 as i32, position.1 as i32) {
                     draw.draw(position, con);
                 }
