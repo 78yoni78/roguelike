@@ -8,12 +8,8 @@ enum Movement {
     Simple,
 }
 
-#[derive(Clone)]
-pub struct Enemy { 
-    pub pos: Pos,
-    pub health: Health,
-    color: Color,
-    ch: char,
+#[derive(Debug, Clone)]
+pub struct Enemy {
     movement: Movement,
     stun_duration: u16,
     stunned_turns_left: u16,
