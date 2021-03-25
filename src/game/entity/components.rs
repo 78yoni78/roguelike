@@ -69,11 +69,18 @@ macro_rules! get {
     ($components:expr, $entity:expr, $field:ident) => (
         $components.$field.get(&($entity))
     );
-    ($components:expr, $entity:expr, $($fields: ident),+) => {
-        ($(get!($components, $entity, $fields)),+)
+    ($components:expr, $entity:expr, $head: ident, $($tail: ident),+) => {
+        if let Some(head) = get!($components, $entity, $head) {
+            if let Some(tail) = get!($components, $entity, $($tail),+) {
+                Some((head, tail))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     };
 }
-
 
 impl Draw {
     pub fn draw(&mut self, Position(x, y): &Position, tint: Color, con: &mut dyn tcod::Console) {
