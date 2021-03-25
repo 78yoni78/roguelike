@@ -82,6 +82,24 @@ macro_rules! get {
     };
 }
 
+#[allow(unused_macros)]
+macro_rules! get_mut {
+    ($components:expr, $entity:expr, $field:ident) => (
+        $components.$field.get_mut(&($entity))
+    );
+    ($components:expr, $entity:expr, $head:ident, $($tail:ident),+) => {
+        if let Some(head) = get_mut!($components, $entity, $head) {
+            if let Some(tail) = get_mut!($components, $entity, $($tail),+) {
+                Some((head, tail))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    };
+}
+
 impl Draw {
     pub fn draw(&mut self, Position(x, y): &Position, tint: Color, con: &mut dyn tcod::Console) {
         use Draw::*;
