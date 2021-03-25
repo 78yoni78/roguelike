@@ -1,5 +1,6 @@
 pub(self) mod map;
 mod dungeon_gen;
+#[macro_use]
 mod entity;
 
 use std::collections::HashSet;
@@ -97,8 +98,7 @@ impl Game {
 
     fn ai_turn(&mut self, e: Entity) -> Option<()> {
         use EnemyMovement::*;
-        let enemy = self.components.enemies.get(&e)?;
-        let enemy_position = self.components.positions.get(&e)?;
+        let (enemy, enemy_position) = get!(self.components, e, enemies, positions)?;
         let &(player_entity, _) = self.components.player.as_ref()?;
         let player_position = self.components.positions.get(&player_entity)?;
         match enemy.movement {
