@@ -2,7 +2,6 @@ pub(self) mod map;
 mod dungeon_gen;
 mod entity;
 
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ops::Mul;
 
