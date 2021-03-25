@@ -81,11 +81,11 @@ fn f(components: &AllComponents, entity: Entity) {
 
 
 impl Draw {
-    pub fn draw(&mut self, Position(x, y): &Position, con: &mut dyn tcod::Console) {
+    pub fn draw(&mut self, Position(x, y): &Position, tint: Color, con: &mut dyn tcod::Console) {
         use Draw::*;
         match self {
             Char(ch, color) => {
-                con.set_default_foreground(*color);
+                con.set_default_foreground(*color * tint);
                 con.put_char(*x as i32, *y as i32, *ch, tcod::BackgroundFlag::None);
             },
         }

@@ -127,6 +127,19 @@ impl Game {
         };
         Some(())
     }
+
+    fn on_end_of_turn(&mut self) {
+        self.remove_dead();
+
+        let mut unstunned = vec![];
+        for (&e, stun) in &mut self.components.stuns {
+            if stun.duration != 0 { stun.duration -= 1; }
+            if stun.duration == 0 { unstunned.push(e); }
+        }
+        for e in unstunned {
+            self.components.stuns.remove(&e);
+        }
+    }
 }
 
 impl Game {
@@ -171,12 +184,13 @@ impl Game {
     }
 
     pub fn player_attack(&mut self) {
-        if let &Some((player_entity, ref player)) = &self.components.player {
+        if let &Some((player_entity, _)) = &self.components.player {
             if let Some(position) = self.components.positions.get(&player_entity) {
                 for nearby_entity in Self::nearby(position, &self.components.positions) {
                     if self.components.enemies.contains_key(&nearby_entity) {
                         if let Some(health) = self.components.health.get_mut(&nearby_entity) {
                             health.take_damage(2);
+                            if rand::random() && !self.components.stuns.contains_key(&nearby_entity) { self.components.stuns.insert(nearby_entity, Stun { duration: 5 }); }
                         }
                     }
                 }
@@ -226,11 +240,13 @@ impl Game {
     }
 
     pub fn npc_turn(&mut self) {
-        self.remove_dead();
+        self.on_end_of_turn();
 
         let enemy_entities: Vec<Entity> = self.components.enemies.keys().cloned().collect();
         for e in enemy_entities {
-            self.ai_turn(e);
+            if !self.components.stuns.contains_key(&e) {
+                self.ai_turn(e);
+            }
         }
     }
 
@@ -261,7 +277,8 @@ impl Game {
         for (&e, draw) in &mut self.components.draws {
             if let Some(position) = self.components.positions.get(&e) {
                 if self.fov_map.is_in_fov(position.0 as i32, position.1 as i32) {
-                    draw.draw(position, con);
+                    let tint = if self.components.stuns.contains_key(&e) { colors::DARK_RED } else { colors::WHITE };
+                    draw.draw(position, tint, con);
                 }
             }
         }
