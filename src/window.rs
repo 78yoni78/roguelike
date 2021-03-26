@@ -46,37 +46,7 @@ impl Window {
         //  Clear the offscreen
         self.ui_screen.set_default_background(tcod::colors::DARK_GREY);
         self.ui_screen.clear();
-        {
-            let value = 7;
-            let maximum = 15;
-            let total_width = 50;
-            let back_color = tcod::colors::RED;
-            let bar_color = tcod::colors::BLUE;
-            let (x, y) = (5, 2);
-            let name = "Mana";
-
-            // render a bar (HP, experience, etc). First calculate the width of the bar
-            let bar_width = (value as f32 / maximum as f32 * total_width as f32) as i32;
-
-            // render the background first
-            self.ui_screen.set_default_background(back_color);
-            self.ui_screen.rect(x, y, total_width, 1, false, tcod::BackgroundFlag::Overlay);
-
-            // now render the bar on top
-            self.ui_screen.set_default_background(bar_color);
-            if bar_width > 0 {
-                self.ui_screen.rect(x, y, bar_width, 1, false, tcod::BackgroundFlag::Overlay);
-            }
-            // finally, some centered text with the values
-            self.ui_screen.set_default_foreground(tcod::colors::WHITE);
-            self.ui_screen.print_ex(
-                x + total_width / 2,
-                y,
-                tcod::BackgroundFlag::None,
-                tcod::TextAlignment::Center,
-                &format!("{}: {}/{}", name, value, maximum),
-            );
-        }
+        
         //  Draw the offscreen onto the root screen and flush
         tcod::console::blit(
             &self.game_screen,

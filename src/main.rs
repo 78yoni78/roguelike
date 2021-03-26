@@ -1,6 +1,7 @@
 pub(self) mod input;
 mod window;
 mod game;
+mod ui;
 
 use window::Window;
 use game::Game;
