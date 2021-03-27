@@ -100,28 +100,31 @@ impl Game {
         use EnemyMovement::*;
         let (enemy, enemy_position) = get!(self.components, e, enemies, positions)?;
         let &(player_entity, _) = self.components.player.as_ref()?;
-        let player_position = self.components.positions.get(&player_entity)?;
+        let player_position = get!(self.components, player_entity, positions)?;
+        let player_health = get_mut!(self.components, player_entity, health)?;
         match enemy.movement {
             Simple => {
                 if Game::is_nearby(player_position, enemy_position) {
-                }
-                let x_diff = player_position.0 as i32 - enemy_position.0 as i32;
-                let y_diff = player_position.1 as i32 - enemy_position.1 as i32;
-                let (dx, dy) = (x_diff.signum(), y_diff.signum());
+                    player_health.take_damage(1);
+                } else {
+                    let x_diff = player_position.0 as i32 - enemy_position.0 as i32;
+                    let y_diff = player_position.1 as i32 - enemy_position.1 as i32;
+                    let (dx, dy) = (x_diff.signum(), y_diff.signum());
 
-                let mut new_position = enemy_position.clone();
-                new_position.0 = (enemy_position.0 as i32 + dx) as u16;
-                new_position.1 = (enemy_position.1 as i32 + dy) as u16;
-                if self.map[Pos::new(new_position.0 as i32, new_position.1 as i32)] == Tile::Wall {
-                    if self.map[Pos::new(new_position.0 as i32, enemy_position.1 as i32)] != Tile::Wall {
-                        new_position.1 = enemy_position.1;
-                    } else if self.map[Pos::new(enemy_position.0 as i32, new_position.1 as i32)] != Tile::Wall {
-                        new_position.0 = enemy_position.0;
-                    } else {
-                        new_position = enemy_position.clone(); 
+                    let mut new_position = enemy_position.clone();
+                    new_position.0 = (enemy_position.0 as i32 + dx) as u16;
+                    new_position.1 = (enemy_position.1 as i32 + dy) as u16;
+                    if self.map[Pos::new(new_position.0 as i32, new_position.1 as i32)] == Tile::Wall {
+                        if self.map[Pos::new(new_position.0 as i32, enemy_position.1 as i32)] != Tile::Wall {
+                            new_position.1 = enemy_position.1;
+                        } else if self.map[Pos::new(enemy_position.0 as i32, new_position.1 as i32)] != Tile::Wall {
+                            new_position.0 = enemy_position.0;
+                        } else {
+                            new_position = enemy_position.clone(); 
+                        }
                     }
+                    self.components.positions.insert(e, new_position);
                 }
-                self.components.positions.insert(e, new_position);
             }
         };
         Some(())
