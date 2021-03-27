@@ -13,6 +13,7 @@ pub struct Window {
     config: Config,
     root: Root,
     game_screen: Offscreen,
+    ui_screen: Offscreen,
 }
 
 impl Window {
@@ -25,10 +26,11 @@ impl Window {
         .init();
         
         let game_screen = Offscreen::new(config.size.0 as i32, config.size.1 as i32);
+        let ui_screen = Offscreen::new(config.size.0 as i32, 5);
 
         tcod::system::set_fps(config.fps_limit);
     
-        Window { config, root, game_screen }
+        Window { config, root, game_screen, ui_screen }
     }
 
     pub fn closed(&self) -> bool {
@@ -41,6 +43,10 @@ impl Window {
         //  Clear the offscreen
         self.game_screen.clear();
         func(&mut self.game_screen);
+        //  Clear the offscreen
+        self.ui_screen.set_default_background(tcod::colors::DARK_GREY);
+        self.ui_screen.clear();
+        
         //  Draw the offscreen onto the root screen and flush
         tcod::console::blit(
             &self.game_screen,
@@ -48,6 +54,16 @@ impl Window {
             (min(self.game_screen.width(), self.config.size.0 as i32), min(self.game_screen.height(), self.config.size.1 as i32)),
             &mut self.root,
             (0, 0),
+            1.0,
+            1.0,
+        );
+        let h = self.root.height();
+        tcod::console::blit(
+            &self.ui_screen,
+            (0, 0),
+            (min(self.ui_screen.width(), self.config.size.0 as i32), min(self.game_screen.height(), self.config.size.1 as i32)),
+            &mut self.root,
+            (0, h - 5),
             1.0,
             1.0,
         );
