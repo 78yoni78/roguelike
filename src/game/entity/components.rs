@@ -37,6 +37,32 @@ pub struct Stun {
 #[derive(Debug)]
 pub struct Player {}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UIPanel {
+    Left, Bottom, Right,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UITransform {
+    pub pos: (u16, u16),
+    pub size: (u16, u16),
+    panel: UIPanel,
+}
+
+#[derive(Debug)]
+pub struct UIBar {
+    label: &'static str,
+    fill: f32,
+    empty_color: Color,
+    fill_color: Color,
+}
+
+#[derive(Debug, Clone)]
+pub struct UIRect()
+
+#[derive(Debug, Clone)]
+pub struct UILabel(String)
+
 
 pub type Components<T> = std::collections::HashMap<Entity, T>;
 
@@ -48,6 +74,10 @@ pub struct AllComponents {
     pub draws: Components<Draw>,
     pub positions: Components<Position>,
     pub stuns: Components<Stun>,
+    pub ui_transfroms: Components<UITransform>,
+    pub ui_bars: Components<UIBar>,
+    pub ui_rects: Components<UIRect>,
+    pub ui_labels: Components<UILabel>,
 }
 
 impl AllComponents {
@@ -61,6 +91,11 @@ impl AllComponents {
         self.health.remove(&entity);
         self.draws.remove(&entity);
         self.positions.remove(&entity);
+        self.stuns.remove(&entity);
+        self.ui_transfroms.remove(&entity);
+        self.ui_bars.remove(&entity);
+        self.ui_rects.remove(&entity);
+        self.ui_labels.remove(&entity);
     }
 }
 
@@ -127,3 +162,5 @@ impl Turn<()> for Stun {
         self.duration -= 1;
     }
 }
+
+impl 
