@@ -24,4 +24,8 @@ impl EntityGenerator {
     pub fn remove(&mut self, entity: &Entity) {
         self.used_ids.remove(&entity.0);
     }
+
+    pub fn contains(&self, e: &Entity) -> bool {
+        self.used_ids.contains(&e.0)
+    }
 }
