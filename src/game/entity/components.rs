@@ -1,10 +1,6 @@
 use tcod::Color;
 use super::Entity;
 
-pub trait Turn<Input> {
-    fn turn(&mut self, input: Input);
-}
-
 #[derive(Debug, Clone)]
 pub enum Draw {
     Char(char, Color),
@@ -122,8 +118,3 @@ impl Health {
     }
 }
 
-impl Turn<()> for Stun {
-    fn turn(&mut self, (): ()) {
-        self.duration -= 1;
-    }
-}
