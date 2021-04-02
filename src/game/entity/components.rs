@@ -1,10 +1,6 @@
 use tcod::Color;
 use super::Entity;
 
-pub trait Turn<Input> {
-    fn turn(&mut self, input: Input);
-}
-
 #[derive(Debug, Clone)]
 pub enum Draw {
     Char(char, Color),
@@ -66,12 +62,26 @@ impl AllComponents {
 
 #[allow(unused_macros)]
 macro_rules! get {
+    ($components:expr, $entity:expr, mut $field:ident) => (
+        $components.$field.get_mut(&($entity))
+    );
     ($components:expr, $entity:expr, $field:ident) => (
         $components.$field.get(&($entity))
     );
-    ($components:expr, $entity:expr, $head:ident, $($tail:ident),+) => {
+    ($components:expr, $entity:expr, $head:ident, $($rest: tt)+) => {
         if let Some(head) = get!($components, $entity, $head) {
-            if let Some(tail) = get!($components, $entity, $($tail),+) {
+            if let Some(tail) = get!($components, $entity, $($rest)+) {
+                Some((head, tail))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    };
+    ($components:expr, $entity:expr, mut $head:ident, $($rest: tt)+) => {
+        if let Some(head) = get!($components, $entity, mut $head) {
+            if let Some(tail) = get!($components, $entity, $($rest)+) {
                 Some((head, tail))
             } else {
                 None
@@ -122,8 +132,3 @@ impl Health {
     }
 }
 
-impl Turn<()> for Stun {
-    fn turn(&mut self, (): ()) {
-        self.duration -= 1;
-    }
-}
