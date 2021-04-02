@@ -18,11 +18,10 @@ fn main() {
     });
     let mut game = Game::new();
 
+    window.redraw(|con| game.draw(con));
     while !window.closed() {
-        window.redraw(|con| game.draw(con));
-
-        game.player_turn(&mut window);
-
-        game.npc_turn();
+        if game.turn(&mut window) {
+            window.redraw(|con| game.draw(con));
+        }
     }
 }

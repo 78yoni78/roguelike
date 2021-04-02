@@ -3,7 +3,7 @@ mod dungeon_gen;
 #[macro_use]
 mod entity;
 
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::ops::Mul;
 
 use tcod::{Color, colors};
@@ -61,6 +61,7 @@ pub struct Game {
     pub map: Map,
     pub fov_map: FovMap,
     pub tiles_seen: HashSet<Pos>,
+    pub turn_order: VecDeque<Entity>,
 }
 
 impl Game {
@@ -96,51 +97,31 @@ impl Game {
         ret
     }
 
-    fn ai_turn(&mut self, e: Entity) -> Option<()> {
+    fn move_towards(&mut self, entity: Entity, target: (u16, u16)) -> Option<()> {
         use EnemyMovement::*;
-        let (enemy, enemy_position) = get!(self.components, e, enemies, positions)?;
-        let &(player_entity, _) = self.components.player.as_ref()?;
-        let player_position = get!(self.components, player_entity, positions)?;
-        let player_health = get_mut!(self.components, player_entity, health)?;
+        let (enemy, enemy_position) = get!(self.components, entity, enemies, mut positions)?;
         match enemy.movement {
             Simple => {
-                if Game::is_nearby(player_position, enemy_position) {
-                    player_health.take_damage(1);
-                } else {
-                    let x_diff = player_position.0 as i32 - enemy_position.0 as i32;
-                    let y_diff = player_position.1 as i32 - enemy_position.1 as i32;
-                    let (dx, dy) = (x_diff.signum(), y_diff.signum());
+                let x_diff = target.0 as i32 - enemy_position.0 as i32;
+                let y_diff = target.1 as i32 - enemy_position.1 as i32;
+                let (dx, dy) = (x_diff.signum(), y_diff.signum());
 
-                    let mut new_position = enemy_position.clone();
-                    new_position.0 = (enemy_position.0 as i32 + dx) as u16;
-                    new_position.1 = (enemy_position.1 as i32 + dy) as u16;
-                    if self.map[Pos::new(new_position.0 as i32, new_position.1 as i32)] == Tile::Wall {
-                        if self.map[Pos::new(new_position.0 as i32, enemy_position.1 as i32)] != Tile::Wall {
-                            new_position.1 = enemy_position.1;
-                        } else if self.map[Pos::new(enemy_position.0 as i32, new_position.1 as i32)] != Tile::Wall {
-                            new_position.0 = enemy_position.0;
-                        } else {
-                            new_position = enemy_position.clone(); 
-                        }
+                let mut new_position = enemy_position.clone();
+                new_position.0 = (enemy_position.0 as i32 + dx) as u16;
+                new_position.1 = (enemy_position.1 as i32 + dy) as u16;
+                if self.map[Pos::new(new_position.0 as i32, new_position.1 as i32)] == Tile::Wall {
+                    if self.map[Pos::new(new_position.0 as i32, enemy_position.1 as i32)] != Tile::Wall {
+                        new_position.1 = enemy_position.1;
+                    } else if self.map[Pos::new(enemy_position.0 as i32, new_position.1 as i32)] != Tile::Wall {
+                        new_position.0 = enemy_position.0;
+                    } else {
+                        new_position = enemy_position.clone(); 
                     }
-                    self.components.positions.insert(e, new_position);
                 }
-            }
+                *enemy_position = new_position;
+            },
         };
         Some(())
-    }
-
-    fn on_end_of_turn(&mut self) {
-        self.remove_dead();
-
-        let mut unstunned = vec![];
-        for (&e, stun) in &mut self.components.stuns {
-            if stun.duration != 0 { stun.duration -= 1; }
-            if stun.duration == 0 { unstunned.push(e); }
-        }
-        for e in unstunned {
-            self.components.stuns.remove(&e);
-        }
     }
 }
 
@@ -151,6 +132,7 @@ impl Game {
         self.components.positions.insert(e, Position(pos.0, pos.1));
         self.components.health.insert(e, Health { hp: 10, ac: 0 });
         self.components.draws.insert(e, Draw::Char('@', colors::WHITE));
+        self.turn_order.push_back(e);
         e
     }
 
@@ -160,6 +142,7 @@ impl Game {
         self.components.health.insert(e, Health { hp: 5, ac: 0 });
         self.components.draws.insert(e, Draw::Char('#', colors::YELLOW));
         self.components.enemies.insert(e, Enemy { movement: EnemyMovement::Simple });
+        self.turn_order.push_back(e);
         e
     }
 
@@ -174,7 +157,8 @@ impl Game {
             dungeon,
             map,
             fov_map,
-            tiles_seen: HashSet::new()
+            tiles_seen: HashSet::new(),
+            turn_order: VecDeque::new(),
         };
         game.generate_player({ let p = game.dungeon.rect_rooms[0].center(); (p.x as u16, p.y as u16) });
 
@@ -202,7 +186,7 @@ impl Game {
 }
 
 impl Game {
-    pub fn player_turn(&mut self, input: &mut dyn InputHandler) -> bool {
+    fn player_turn(&mut self, input: &mut dyn InputHandler) -> bool {
         if let &Some((e, _)) = &self.components.player {
             use KeyCode::*;
             
@@ -241,14 +225,39 @@ impl Game {
         return false;
     }
 
-    pub fn npc_turn(&mut self) {
-        self.on_end_of_turn();
+    fn npc_turn(&mut self, npc_entity: Entity) {
+        let player_entity = self.components.player.as_ref().unwrap().0;
+        let enemy_position = get!(self.components, npc_entity, positions).unwrap();
+        let (player_position, player_health) = get!(self.components, player_entity, positions, mut health).unwrap();
 
-        let enemy_entities: Vec<Entity> = self.components.enemies.keys().cloned().collect();
-        for e in enemy_entities {
-            if !self.components.stuns.contains_key(&e) {
-                self.ai_turn(e);
-            }
+        if let Some(stun) = get_mut!(self.components, npc_entity, stuns) {
+            stun.duration -= 1;
+            if stun.duration == 0 { self.components.stuns.remove(&npc_entity); }
+        } else if Game::is_nearby(player_position, enemy_position) {
+            player_health.take_damage(1);
+        } else {
+            let target = (player_position.0, player_position.1);
+            self.move_towards(npc_entity, target);
+        }
+    }
+
+    pub fn turn(&mut self, input: &mut dyn InputHandler) -> bool {
+        let mut turn_entity = self.turn_order.pop_front().unwrap();
+        while !self.entity_gen.contains(&turn_entity) {
+            turn_entity = self.turn_order.pop_front().unwrap();
+        }
+        self.turn_order.push_back(turn_entity);
+        let is_player_entity = self.components.player.iter().all(|x| x.0 == turn_entity);
+
+        if is_player_entity {
+            self.player_turn(input);
+        } else {
+            self.npc_turn(turn_entity);
+        }
+        self.remove_dead();
+        match get!(self.components, turn_entity, positions) {
+            None => true,
+            Some(&Position(x,y)) => self.fov_map.is_in_fov(x as i32, y as i32),
         }
     }
 
