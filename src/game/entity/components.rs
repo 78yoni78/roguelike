@@ -47,10 +47,10 @@ pub struct UITransform {
 
 #[derive(Debug)]
 pub struct UIBar {
-    label: &'static str,
-    fill: f32,
-    empty_color: Color,
-    fill_color: Color,
+    pub label: &'static str,
+    pub fill: f32,
+    pub empty_color: Color,
+    pub fill_color: Color,
 }
 
 #[derive(Debug, Clone)]
