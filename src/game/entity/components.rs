@@ -54,10 +54,10 @@ pub struct UIBar {
 }
 
 #[derive(Debug, Clone)]
-pub struct UIRect()
+pub struct UIRect;
 
 #[derive(Debug, Clone)]
-pub struct UILabel(String)
+pub struct UILabel(String);
 
 
 pub type Components<T> = std::collections::HashMap<Entity, T>;
