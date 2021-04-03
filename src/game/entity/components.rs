@@ -57,7 +57,7 @@ pub struct UIBar {
 pub struct UIRect;
 
 #[derive(Debug, Clone)]
-pub struct UILabel(String);
+pub struct UILabel(pub String);
 
 
 pub type Components<T> = std::collections::HashMap<Entity, T>;
