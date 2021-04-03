@@ -48,7 +48,8 @@ pub struct UITransform {
 #[derive(Debug)]
 pub struct UIBar {
     pub label: &'static str,
-    pub fill: f32,
+    pub value: u32,
+    pub maximum: u32,
     pub empty_color: Color,
     pub fill_color: Color,
 }
