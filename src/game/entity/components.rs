@@ -42,7 +42,7 @@ pub enum UIPanel {
 pub struct UITransform {
     pub pos: (u16, u16),
     pub size: (u16, u16),
-    panel: UIPanel,
+    pub panel: UIPanel,
 }
 
 #[derive(Debug)]
