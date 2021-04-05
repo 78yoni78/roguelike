@@ -1,5 +1,6 @@
-use tcod::Color;
+use tcod::{Console, BackgroundFlag, TextAlignment, Color};
 use super::Entity;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum Draw {
@@ -33,7 +34,7 @@ pub struct Stun {
 #[derive(Debug)]
 pub struct Player {}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum UIPanel {
     Left, Bottom, Right,
 }
@@ -43,6 +44,10 @@ pub struct UITransform {
     pub pos: (u16, u16),
     pub size: (u16, u16),
     pub panel: UIPanel,
+}
+
+pub trait UIDraw {
+    fn draw(&self, tr: &UITransform, con: &mut dyn tcod::Console);
 }
 
 #[derive(Debug)]
@@ -165,6 +170,51 @@ impl Health {
         }
         let hp_taken = std::cmp::min(damage - self.ac, self.hp);    //  because you cant damage an enemy more than their hp
         self.hp -= hp_taken;
+    }
+}
+
+impl UIDraw for UIRect {
+    fn draw(&self, tr: &UITransform, con: &mut dyn tcod::Console) {
+        con.rect(
+            tr.pos.0 as i32, tr.pos.1 as i32,
+            tr.size.0 as i32, tr.size.1 as i32,
+            true, tcod::BackgroundFlag::Overlay
+        );
+    }
+}
+
+impl UIDraw for UILabel {
+    fn draw(&self, tr: &UITransform, con: &mut dyn tcod::Console) {
+        (con as &dyn tcod::Console).print_ex(
+            tr.pos.0 as i32, tr.pos.1 as i32, 
+            tcod::BackgroundFlag::Overlay, tcod::TextAlignment::Left,
+            &self.0
+        );
+    }
+}
+
+impl UIDraw for UIBar {
+    fn draw(&self, tr: &UITransform, con: &mut dyn tcod::Console) {
+        let fill_width = (self.value as f32 / self.maximum as f32 * tr.size.0 as f32) as i32;
+        //  render the empty part
+        con.set_default_background(self.empty_color);
+        con.rect(tr.pos.0 as i32, tr.pos.1 as i32, tr.size.0 as i32, 1, false, BackgroundFlag::Overlay);
+        //  render the full part
+        con.set_default_background(self.fill_color);
+        if fill_width > 0 { con.rect(tr.pos.0 as i32, tr.pos.1 as i32, fill_width, 1, false, BackgroundFlag::Overlay); }
+        //  render some centered text with the values
+        con.set_default_foreground(tcod::colors::WHITE);
+        (con as &dyn Console).print_ex( //  for some reason con.print_ex doesnt compile
+            tr.pos.0 as i32 + tr.size.0 as i32 / 2, tr.pos.1 as i32, 
+            BackgroundFlag::Overlay, TextAlignment::Center,
+            &format!("{}: {}/{}", &self.label, self.value, self.maximum),
+        );
+    }
+}
+
+impl UITransform {
+    pub fn draw(&self, components: AllComponents, panels: &HashMap<UIPanel, &mut dyn tcod::Console>) {
+        for 
     }
 }
 
